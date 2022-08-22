@@ -1,12 +1,12 @@
 "use strict";
 
-const { BCRYPT_WORK_FACTOR } = require('../config');
+const { BCRYPT_WORK_FACTOR } = require("../config");
+const db = require('../db')
 
 const bcrypt = require("bcrypt");
 /** User of the site. */
 
 class User {
-
   /** Register new user. Returns
    *    {username, password, first_name, last_name, phone}
    */
@@ -15,11 +15,12 @@ class User {
     const hashedPassword = await bcrypt.hash(password, BCRYPT_WORK_FACTOR);
 
     const results = await db.query(
-      `INSERT INTO users (username, password, first_name, last_name, phone)
+      `INSERT INTO users (username, password, first_name, last_name, phone, join_at)
          VALUES
-           ($1, $2, $3, $4, $5)
+           ($1, $2, $3, $4, $5, CURRENT_TIMESTAMP)
          RETURNING username, password, first_name, last_name, phone`,
-      [username, hashedPassword, first_name, last_name, phone]);
+      [username, hashedPassword, first_name, last_name, phone]
+    );
 
     return results.rows[0];
   }
@@ -35,7 +36,7 @@ class User {
     );
     const user = results.rows[0];
     if (user) {
-      if (await bcrypt.compare(password, user.password) === true) {
+      if ((await bcrypt.compare(password, user.password)) === true) {
         return true;
       }
     }
@@ -83,7 +84,6 @@ class User {
     return results.rows[0];
 
     //TODO: THROW ERROR???
-
   }
 
   /** Return messages from this user.
@@ -105,15 +105,19 @@ class User {
       [username]
     );
 
-    const messages = mResults.map(
-      m => {{
-        id: m.id, body: m.body,
-
-
-      }}
-    );
-
-
+    const messages = mResults.rows.map((m) => ({
+      id: m.id,
+      body: m.body,
+      sent_at: m.sent_at,
+      read_at: m.read_at,
+      to_user: {
+        username: u.username,
+        first_name: u.first_name,
+        last_name: u.last_name,
+        phone: u.phone,
+      },
+    }));
+    return messages;
   }
 
   /** Return messages to this user.
@@ -125,16 +129,30 @@ class User {
    */
 
   static async messagesTo(username) {
+    const mResults = db.query(
+      `SELECT m.id, m.body, m.sent_at, m.read_at,
+        u.username, u.first_name, u.last_name, u.phone
+          FROM messages AS m
+            JOIN users AS u
+              ON m.from_username = u.username
+          WHERE m.to_username = $1`,
+      [username]
+    );
+
+    const messages = mResults.rows.map((m) => ({
+      id: m.id,
+      body: m.body,
+      sent_at: m.sent_at,
+      read_at: m.read_at,
+      from_user: {
+        username: u.username,
+        first_name: u.first_name,
+        last_name: u.last_name,
+        phone: u.phone,
+      },
+    }));
+    return messages;
   }
 }
 
-
 module.exports = User;
-
-
-//HERE:
-// INSERT INTO users (username, password, first_name, last_name, phone, join_at)  VALUES ('test_user', 'password', 'test', 'user', '1234567890', CURRENT_TIMESTAMP);
-
-// INSERT INTO users (username, password, first_name, last_name, phone, join_at)  VALUES ('test_user2', 'password', 'test2', 'user2', '0234567890', CURRENT_TIMESTAMP);
-
-// INSERT INTO messages (from_username, to_username, body, sent_at) VALUES('test_user', 'test_user2', 'heeeyyy', CURRENT_TIMESTAMP); 
