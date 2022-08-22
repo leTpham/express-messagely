@@ -1,9 +1,10 @@
 "use strict";
 
 const { BCRYPT_WORK_FACTOR } = require("../config");
-const db = require('../db')
+const db = require("../db");
 
 const bcrypt = require("bcrypt");
+
 /** User of the site. */
 
 class User {
@@ -15,9 +16,17 @@ class User {
     const hashedPassword = await bcrypt.hash(password, BCRYPT_WORK_FACTOR);
 
     const results = await db.query(
-      `INSERT INTO users (username, password, first_name, last_name, phone, join_at)
+      `INSERT INTO users (
+        username, 
+        password, 
+        first_name, 
+        last_name, 
+        phone, 
+        join_at, 
+        last_login_at
+      )
          VALUES
-           ($1, $2, $3, $4, $5, CURRENT_TIMESTAMP)
+           ($1, $2, $3, $4, $5, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
          RETURNING username, password, first_name, last_name, phone`,
       [username, hashedPassword, first_name, last_name, phone]
     );
@@ -35,12 +44,8 @@ class User {
       [username]
     );
     const user = results.rows[0];
-    if (user) {
-      if ((await bcrypt.compare(password, user.password)) === true) {
-        return true;
-      }
-    }
-    return false;
+
+    return user && ((await bcrypt.compare(password, user.password)) === true)
   }
 
   /** Update last_login_at for user */
@@ -48,8 +53,9 @@ class User {
   static async updateLoginTimestamp(username) {
     await db.query(
       `UPDATE users
-        SET last_login_at=${CURRENT_TIMESTAMP}
-        WHERE username=${username}`
+        SET last_login_at = CURRENT_TIMESTAMP
+        WHERE username=$1`,
+        [username]
     );
   }
 
@@ -75,7 +81,7 @@ class User {
    *          last_login_at } */
 
   static async get(username) {
-    const results = db.query(
+    const results = await db.query(
       `SELECT username, first_name, last_name, phone, join_at, last_login_at
           FROM users
           WHERE username = $1`,
@@ -95,7 +101,7 @@ class User {
    */
 
   static async messagesFrom(username) {
-    const mResults = db.query(
+    const mResults = await db.query(
       `SELECT m.id, m.body, m.sent_at, m.read_at,
         u.username, u.first_name, u.last_name, u.phone
           FROM messages AS m
@@ -111,10 +117,10 @@ class User {
       sent_at: m.sent_at,
       read_at: m.read_at,
       to_user: {
-        username: u.username,
-        first_name: u.first_name,
-        last_name: u.last_name,
-        phone: u.phone,
+        username: m.username,
+        first_name: m.first_name,
+        last_name: m.last_name,
+        phone: m.phone,
       },
     }));
     return messages;
@@ -129,7 +135,7 @@ class User {
    */
 
   static async messagesTo(username) {
-    const mResults = db.query(
+    const mResults = await db.query(
       `SELECT m.id, m.body, m.sent_at, m.read_at,
         u.username, u.first_name, u.last_name, u.phone
           FROM messages AS m
@@ -145,10 +151,10 @@ class User {
       sent_at: m.sent_at,
       read_at: m.read_at,
       from_user: {
-        username: u.username,
-        first_name: u.first_name,
-        last_name: u.last_name,
-        phone: u.phone,
+        username: m.username,
+        first_name: m.first_name,
+        last_name: m.last_name,
+        phone: m.phone,
       },
     }));
     return messages;
