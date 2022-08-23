@@ -5,6 +5,8 @@ const db = require("../db");
 
 const bcrypt = require("bcrypt");
 
+const { UnauthorizedError } = require("../expressError")
+
 /** User of the site. */
 
 class User {
@@ -17,12 +19,12 @@ class User {
 
     const results = await db.query(
       `INSERT INTO users (
-        username, 
-        password, 
-        first_name, 
-        last_name, 
-        phone, 
-        join_at, 
+        username,
+        password,
+        first_name,
+        last_name,
+        phone,
+        join_at,
         last_login_at
       )
          VALUES
@@ -87,9 +89,13 @@ class User {
           WHERE username = $1`,
       [username]
     );
-    return results.rows[0];
 
-    //TODO: THROW ERROR???
+    const user =  results.rows[0];
+
+    if (!user) throw new UnauthorizedError("Invalid user/password.");
+
+    return user;
+
   }
 
   /** Return messages from this user.
