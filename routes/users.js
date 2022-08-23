@@ -2,9 +2,7 @@
 
 const Router = require("express").Router;
 
-const { application } = require("express");
 const {
-  authenticateJWT,
   ensureLoggedIn,
   ensureCorrectUser,
 } = require("../middleware/auth");
@@ -44,8 +42,7 @@ router.get("/:username", ensureCorrectUser, async function (req, res, next) {
  **/
 
 router.get("/:username/to", ensureCorrectUser, async function (req, res, next) {
-  const user = await User.get(req.params.username);
-  const messages = await User.messagesTo(user.username);
+  const messages = await User.messagesTo(req.params.username);
   return res.json({ messages });
 });
 
@@ -63,8 +60,7 @@ router.get(
   "/:username/from",
   ensureCorrectUser,
   async function (req, res, next) {
-    const user = await User.get(req.params.username);
-    const messages = await User.messagesFrom(user.username);
+    const messages = await User.messagesFrom(req.params.username);
     return res.json({ messages });
   }
 );

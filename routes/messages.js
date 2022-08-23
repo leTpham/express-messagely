@@ -25,7 +25,8 @@ router.get("/:id", ensureLoggedIn, async function (req, res, next) {
 
   const message = await Message.get(req.params.id);
 
-  if (message.from_user.username === user || message.to_user.username === user) {
+  if (message.from_user.username === user ||
+    message.to_user.username === user) {
     return res.json({ message });
   }
   throw new UnauthorizedError("This message is not for your eyes!");

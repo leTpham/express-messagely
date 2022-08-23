@@ -17,6 +17,7 @@ router.post("/login", async function (req, res, next) {
 
   if (user) {
     const token = jwt.sign({ username }, SECRET_KEY);
+    //updateLoginTimestamp
     return res.json({ token });
   }
 
@@ -38,7 +39,7 @@ router.post("/register", async function (req, res, next) {
     const token = jwt.sign({ username }, SECRET_KEY);
     return res.json({ token });
   }
-  throw new UnauthorizedError("Make sure all fields are filled.");
+  throw new UnauthorizedError("Make sure all fields are filled."); //more robust later
 
 });
 

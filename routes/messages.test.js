@@ -12,6 +12,7 @@ const Message = require("../models/message");
 let u1Token;
 let u2Token;
 let u3Token;
+//set global m1.id, m2.id...
 
 describe("User Routes Test", function () {
   beforeEach(async function () {
@@ -127,6 +128,7 @@ describe("User Routes Test", function () {
     test("returns 401 when logged out", async function () {
       let response = await request(app).get("/messages/1");
       expect(response.statusCode).toEqual(401);
+      //test response body with the specific error message
     });
 
     test("returns 401 with token from unauthorized user", async function () {
@@ -211,6 +213,7 @@ describe("User Routes Test", function () {
   test("returns 401 when logged out", async function () {
     let response = await request(app).post("/messages/1/read");
     expect(response.statusCode).toEqual(401);
+    //don't nibble
   });
 
 

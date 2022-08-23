@@ -13,6 +13,7 @@ let u1Token;
 let u2Token;
 
 describe("User Routes Test", function () {
+  //beforeEach as seperate function in another file
   beforeEach(async function () {
     await db.query("DELETE FROM messages");
     await db.query("DELETE FROM users");
