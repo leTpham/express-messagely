@@ -1,5 +1,9 @@
 "use strict";
 
+const { UnauthorizedError } = require("../expressError");
+const { ensureCorrectUser, ensureLoggedIn } = require("../middleware/auth");
+const Message = require("../models/message");
+
 const Router = require("express").Router;
 const router = new Router();
 
@@ -16,6 +20,18 @@ const router = new Router();
  *
  **/
 
+ router.get("/:id",ensureLoggedIn, async function (req, res, next) {
+  const user = res.locals.user.username;
+
+  const message = await Message.get(req.params.id)
+  console.log('in if in route from then to',message.from_user.username,message.to_user.username)
+  
+  if (message.from_user.username === user || message.to_user.username === user) {
+    return res.json({ message });
+  }
+  throw new UnauthorizedError("This message is not for your eyes!");
+});
+
 
 /** POST / - post message.
  *
@@ -24,6 +40,17 @@ const router = new Router();
  *
  **/
 
+router.get("/:id",ensureLoggedIn, async function (req, res, next) {
+ const user = res.locals.user.username;
+
+ const message = await Message.get(req.params.id)
+ console.log('in if in route from then to',message.from_user.username,message.to_user.username)
+ 
+ if (message.from_user.username === user || message.to_user.username === user) {
+   return res.json({ message });
+ }
+ throw new UnauthorizedError("This message is not for your eyes!");
+});
 
 /** POST/:id/read - mark message as read:
  *
